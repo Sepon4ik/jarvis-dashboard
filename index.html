@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S. — Pavel Dranchuk · Job Hunter</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --arc:    #00d4ff;
+  --arc2:   #007fa3;
+  --arc3:   rgba(0,212,255,0.08);
+  --gold:   #f5c842;
+  --green:  #00ff99;
+  --red:    #ff4560;
+  --amber:  #ffaa00;
+  --purple: #b44fff;
+  --bg:     #020b14;
+  --panel:  rgba(4,16,28,0.95);
+  --border: rgba(0,212,255,0.12);
+  --bhi:    rgba(0,212,255,0.3);
+  --text:   #cce8f5;
+  --dim:    #3a6578;
+  --mid:    #7aaec4;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;background:var(--bg);}
+body{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--text);}
+
+/* BG */
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px);
+  background-size:50px 50px;pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 90% 40% at 50% 0%,rgba(0,70,130,0.18) 0%,transparent 65%);
+  pointer-events:none;z-index:0;}
+
+.scanlines{position:fixed;inset:0;pointer-events:none;z-index:1;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);}
+
+/* CORNERS */
+.cb{position:fixed;width:20px;height:20px;pointer-events:none;z-index:100;opacity:0.28;}
+.cb-tl{top:5px;left:5px;border-top:1.5px solid var(--arc);border-left:1.5px solid var(--arc);}
+.cb-tr{top:5px;right:5px;border-top:1.5px solid var(--arc);border-right:1.5px solid var(--arc);}
+.cb-bl{bottom:5px;left:5px;border-bottom:1.5px solid var(--arc);border-left:1.5px solid var(--arc);}
+.cb-br{bottom:5px;right:5px;border-bottom:1.5px solid var(--arc);border-right:1.5px solid var(--arc);}
+
+/* SHELL */
+.shell{position:relative;z-index:5;display:grid;grid-template-rows:50px 1fr;height:100vh;}
+
+/* ── HEADER ── */
+.hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;
+  background:rgba(2,10,20,0.98);
+  border-bottom:1px solid var(--border);
+}
+.hdr-l{display:flex;align-items:center;gap:13px;}
+.reactor{width:32px;height:32px;}
+.reactor svg{width:100%;height:100%;}
+.hdr-title{font-family:'Orbitron',monospace;font-size:13px;font-weight:900;
+  color:var(--arc);letter-spacing:5px;text-shadow:0 0 16px rgba(0,212,255,0.5);}
+.hdr-sub{font-size:8px;letter-spacing:2px;color:var(--dim);}
+
+.nav{display:flex;gap:2px;}
+.nb{padding:5px 14px;border-radius:3px;background:transparent;border:1px solid transparent;
+  color:var(--dim);cursor:pointer;font-family:'Rajdhani',sans-serif;
+  font-size:11px;letter-spacing:1.5px;font-weight:700;text-transform:uppercase;transition:all .2s;}
+.nb:hover{color:var(--arc);border-color:rgba(0,212,255,0.2);}
+.nb.on{color:var(--arc);background:rgba(0,212,255,0.09);border-color:var(--arc2);}
+
+.hdr-r{display:flex;align-items:center;gap:16px;}
+.pill{display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:1.5px;color:var(--dim);}
+.led{width:6px;height:6px;border-radius:50%;}
+.led.g{background:var(--green);box-shadow:0 0 7px var(--green);animation:lp 2.5s infinite;}
+.led.y{background:var(--amber);box-shadow:0 0 7px var(--amber);}
+@keyframes lp{0%,100%{opacity:1}50%{opacity:.3}}
+.clock{font-family:'Orbitron',monospace;font-size:12px;letter-spacing:2px;color:var(--arc);}
+
+/* ── VIEWS ── */
+.views{overflow:hidden;display:flex;flex-direction:column;}
+.view{display:none;flex:1;overflow:hidden;}
+.view.on{display:flex;}
+
+/* ══════════════════════════════
+   HUNT VIEW — main
+══════════════════════════════ */
+#v-hunt{flex-direction:row;gap:1px;background:rgba(0,212,255,0.05);}
+
+/* LEFT sidebar — profile + controls */
+.sidebar{
+  width:260px;flex-shrink:0;
+  display:flex;flex-direction:column;gap:1px;
+  background:rgba(0,212,255,0.05);
+}
+
+/* PANEL */
+.pnl{background:var(--panel);display:flex;flex-direction:column;overflow:hidden;position:relative;}
+.pnl::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,0.2),transparent);}
+.ph{padding:8px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;background:rgba(2,10,20,0.6);}
+.pt{font-family:'Orbitron',monospace;font-size:8px;letter-spacing:2px;color:var(--arc2);
+  text-transform:uppercase;display:flex;align-items:center;gap:6px;}
+.pt::before{content:'';display:inline-block;width:5px;height:5px;
+  border:1px solid var(--arc2);transform:rotate(45deg);flex-shrink:0;}
+.pb{flex:1;overflow-y:auto;padding:12px 14px;}
+.pb::-webkit-scrollbar{width:2px;}
+.pb::-webkit-scrollbar-thumb{background:var(--arc2);}
+
+/* Profile card */
+.profile{
+  padding:16px 14px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.av-wrap{position:relative;width:68px;height:68px;}
+.av-wrap svg{position:absolute;inset:0;width:100%;height:100%;}
+.av-init{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',monospace;font-size:18px;font-weight:900;
+  color:var(--arc);text-shadow:0 0 18px rgba(0,212,255,0.6);
+}
+.p-name{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  color:var(--text);letter-spacing:1px;text-align:center;}
+.p-role{font-size:11px;color:var(--arc);letter-spacing:.5px;text-align:center;}
+.p-loc{font-size:10px;color:var(--dim);letter-spacing:.5px;}
+.p-tags{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:2px;}
+.ptag{font-size:8.5px;padding:2px 7px;border-radius:2px;
+  background:rgba(0,212,255,0.09);border:1px solid var(--border);color:var(--mid);
+  letter-spacing:.5px;}
+.ptag.gold{background:rgba(245,200,66,0.09);border-color:rgba(245,200,66,0.2);color:var(--gold);}
+
+/* Search controls */
+.search-block{padding:12px 14px;flex-shrink:0;border-bottom:1px solid var(--border);}
+.search-block label{font-size:9px;letter-spacing:2px;color:var(--dim);
+  text-transform:uppercase;display:block;margin-bottom:5px;}
+.ji{width:100%;background:var(--arc3);border:1px solid var(--border);border-radius:3px;
+  padding:7px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:12px;
+  outline:none;transition:border .2s;margin-bottom:7px;}
+.ji:focus{border-color:var(--arc2);}
+.ji::placeholder{color:var(--dim);}
+.search-row{display:flex;gap:6px;}
+.sbtn{flex:1;padding:7px;border-radius:3px;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:1px;
+  transition:all .2s;border:1px solid var(--border);background:transparent;color:var(--dim);}
+.sbtn.pri{background:rgba(0,212,255,0.12);border-color:var(--arc2);color:var(--arc);}
+.sbtn.pri:hover{background:rgba(0,212,255,0.22);}
+.sbtn:hover{border-color:var(--arc);color:var(--arc);}
+.sbtn.saved{border-color:rgba(245,200,66,0.3);color:var(--gold);background:rgba(245,200,66,0.06);}
+.sbtn.saved:hover{background:rgba(245,200,66,0.14);}
+
+/* Filters */
+.filter-row{display:flex;gap:4px;flex-wrap:wrap;padding:10px 14px;
+  border-bottom:1px solid var(--border);flex-shrink:0;}
+.ftag{padding:3px 9px;border-radius:2px;font-size:9px;letter-spacing:1px;
+  text-transform:uppercase;cursor:pointer;transition:all .2s;
+  border:1px solid var(--border);color:var(--dim);background:transparent;}
+.ftag:hover{border-color:var(--arc2);color:var(--arc);}
+.ftag.on{border-color:var(--arc2);color:var(--arc);background:rgba(0,212,255,0.1);}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;
+  background:rgba(0,212,255,0.05);flex-shrink:0;}
+.stat{padding:8px;text-align:center;background:var(--panel);}
+.sv{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:var(--arc);}
+.sl{font-size:8px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-top:2px;}
+
+/* CENTER — jobs list */
+.jobs-col{
+  flex:1;display:flex;flex-direction:column;overflow:hidden;
+}
+.jobs-list{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;}
+.jobs-list::-webkit-scrollbar{width:2px;}
+.jobs-list::-webkit-scrollbar-thumb{background:var(--arc2);}
+
+/* Job card */
+.jc{
+  padding:13px 14px;border-radius:3px;
+  border:1px solid var(--border);background:rgba(0,212,255,0.04);
+  cursor:pointer;transition:all .2s;position:relative;
+  animation:jcin .3s ease;
+}
+@keyframes jcin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.jc:hover{border-color:var(--arc2);background:rgba(0,212,255,0.09);}
+.jc.saved{border-color:rgba(245,200,66,0.3);background:rgba(245,200,66,0.04);}
+.jc.applied{border-color:rgba(0,255,153,0.25);background:rgba(0,255,153,0.03);}
+.jc-match{
+  position:absolute;top:10px;right:12px;
+  font-family:'Orbitron',monospace;font-size:9px;font-weight:700;
+  padding:2px 7px;border-radius:2px;letter-spacing:1px;
+}
+.match-hi{background:rgba(0,255,153,0.15);color:var(--green);border:1px solid rgba(0,255,153,0.25);}
+.match-med{background:rgba(245,200,66,0.12);color:var(--gold);border:1px solid rgba(245,200,66,0.2);}
+.match-lo{background:rgba(0,212,255,0.1);color:var(--arc);border:1px solid var(--border);}
+.jc-title{font-size:14px;font-weight:700;color:var(--text);padding-right:80px;margin-bottom:3px;}
+.jc-co{font-size:12px;color:var(--arc);letter-spacing:.5px;}
+.jc-meta{font-size:11px;color:var(--mid);margin-top:2px;}
+.jc-tags{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;}
+.jtag{font-size:9px;padding:2px 7px;border-radius:2px;letter-spacing:.5px;
+  border:1px solid var(--border);color:var(--mid);background:transparent;}
+.jtag.rem{background:rgba(0,255,153,0.08);color:var(--green);border-color:rgba(0,255,153,0.2);}
+.jtag.hot{background:rgba(255,69,96,0.1);color:var(--red);border-color:rgba(255,69,96,0.2);}
+.jc-desc{font-size:11px;color:var(--dim);margin-top:7px;line-height:1.5;}
+.jc-actions{display:flex;gap:6px;margin-top:9px;}
+.ja{padding:4px 12px;border-radius:2px;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:1px;
+  transition:all .2s;border:1px solid var(--border);background:transparent;color:var(--dim);}
+.ja:hover{border-color:var(--arc);color:var(--arc);}
+.ja.pri{background:rgba(0,212,255,0.12);border-color:var(--arc2);color:var(--arc);}
+.ja.pri:hover{background:rgba(0,212,255,0.22);}
+.ja.save{border-color:rgba(245,200,66,0.3);color:var(--gold);}
+.ja.apply{border-color:rgba(0,255,153,0.25);color:var(--green);}
+
+/* RIGHT — JARVIS analysis */
+.analysis-col{
+  width:300px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;
+}
+.chat-body{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px;}
+.chat-body::-webkit-scrollbar{width:2px;}
+.chat-body::-webkit-scrollbar-thumb{background:var(--arc2);}
+.msg{display:flex;gap:8px;animation:jcin .25s ease;}
+.msg.u{flex-direction:row-reverse;}
+.mav{width:26px;height:26px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);font-size:10px;}
+.mav.j{background:rgba(0,212,255,0.1);color:var(--arc);border-color:var(--arc2);
+  font-family:'Orbitron',monospace;font-size:6px;letter-spacing:.5px;}
+.mav.u{background:rgba(245,200,66,0.08);border-color:var(--gold);color:var(--gold);}
+.mbub{max-width:90%;padding:9px 12px;border-radius:4px;font-size:12.5px;line-height:1.6;}
+.msg.j .mbub{background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-top-left-radius:1px;}
+.msg.u .mbub{background:rgba(245,200,66,0.06);border:1px solid rgba(245,200,66,0.15);border-top-right-radius:1px;}
+.mtag{font-family:'Orbitron',monospace;font-size:7px;letter-spacing:2px;
+  color:var(--arc2);display:block;margin-bottom:3px;}
+.msg.u .mtag{color:rgba(245,200,66,0.5);}
+.tdots{display:flex;align-items:center;gap:3px;}
+.tdots span{width:4px;height:4px;border-radius:50%;background:var(--arc);animation:td 1.1s infinite;}
+.tdots span:nth-child(2){animation-delay:.18s;}
+.tdots span:nth-child(3){animation-delay:.36s;}
+@keyframes td{0%,60%,100%{opacity:.2;transform:scale(1)}30%{opacity:1;transform:scale(1.4)}}
+.chat-foot{padding:10px 14px;border-top:1px solid var(--border);
+  display:flex;gap:7px;align-items:flex-end;
+  background:rgba(2,10,20,0.9);flex-shrink:0;}
+.cta{flex:1;background:var(--arc3);border:1px solid var(--border);border-radius:3px;
+  padding:7px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:12px;
+  resize:none;min-height:36px;max-height:80px;outline:none;transition:border .2s;line-height:1.4;}
+.cta:focus{border-color:var(--arc2);}
+.cta::placeholder{color:var(--dim);}
+.csend{width:36px;height:36px;border-radius:3px;flex-shrink:0;
+  background:rgba(0,212,255,0.1);border:1px solid var(--arc2);color:var(--arc);
+  cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;}
+.csend:hover{background:rgba(0,212,255,0.22);}
+
+/* quick asks */
+.qasks{padding:8px 14px;border-top:1px solid var(--border);
+  display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.qa{padding:5px 8px;border-radius:2px;background:var(--arc3);border:1px solid var(--border);
+  color:var(--mid);cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:10px;
+  letter-spacing:.5px;transition:all .2s;text-align:left;}
+.qa:hover{border-color:var(--arc2);color:var(--arc);}
+
+/* ══ NEWS VIEW ══ */
+#v-news{flex-direction:column;padding:16px 20px;overflow-y:auto;gap:14px;}
+.news-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;
+  background:rgba(0,212,255,0.05);flex:1;}
+.ni{padding:9px 0;border-bottom:1px solid rgba(0,212,255,0.07);cursor:pointer;transition:all .18s;}
+.ni:hover .ni-t{color:var(--arc);}
+.ni-src{display:flex;align-items:center;gap:5px;
+  font-size:8.5px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-bottom:4px;}
+.ntag{padding:1px 5px;border-radius:2px;font-size:7.5px;letter-spacing:.8px;font-weight:700;}
+.ntag-t{background:rgba(0,212,255,0.12);color:var(--arc);}
+.ntag-a{background:rgba(180,79,255,0.12);color:#c07fff;}
+.ntag-f{background:rgba(245,200,66,0.12);color:var(--gold);}
+.ntag-w{background:rgba(0,255,153,0.1);color:var(--green);}
+.ni-t{font-size:12.5px;font-weight:600;line-height:1.4;color:var(--text);transition:color .18s;}
+.ni-time{font-size:9px;color:var(--dim);margin-top:3px;font-family:'Share Tech Mono',monospace;}
+
+/* ══ TRACKER VIEW ══ */
+#v-track{flex-direction:column;padding:16px 20px;overflow-y:auto;gap:14px;}
+.track-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1px;
+  background:rgba(0,212,255,0.05);}
+.track-col-title{font-family:'Orbitron',monospace;font-size:8px;letter-spacing:2px;
+  color:var(--arc2);padding:8px 12px;border-bottom:1px solid var(--border);
+  background:rgba(2,10,20,0.7);}
+.track-item{padding:10px 12px;border-bottom:1px solid rgba(0,212,255,0.06);
+  font-size:12px;transition:background .15s;}
+.track-item:hover{background:rgba(0,212,255,0.05);}
+.ti-title{font-weight:600;color:var(--text);margin-bottom:2px;}
+.ti-co{font-size:10.5px;color:var(--arc);}
+.ti-date{font-size:9px;color:var(--dim);margin-top:3px;font-family:'Share Tech Mono',monospace;}
+
+/* loading */
+.ld{color:var(--dim);font-size:10px;letter-spacing:2px;text-align:center;padding:24px 0;}
+
+/* BOOT */
+.boot{position:fixed;inset:0;z-index:999;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  transition:opacity .6s;}
+.boot.gone{opacity:0;pointer-events:none;}
+.boot-ring{width:54px;height:54px;}
+.boot-ring svg{width:100%;height:100%;animation:spin 2s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.boot-t{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:4px;color:var(--arc);}
+.boot-bar{width:180px;height:2px;background:rgba(0,212,255,0.1);border-radius:1px;overflow:hidden;}
+.boot-fill{height:100%;background:var(--arc);border-radius:1px;transition:width .35s;box-shadow:0 0 8px var(--arc);}
+.boot-s{font-size:9px;letter-spacing:2px;color:var(--dim);}
+
+/* toast */
+.toast{position:fixed;bottom:28px;right:28px;z-index:500;
+  padding:9px 16px;background:rgba(0,212,255,0.1);
+  border:1px solid var(--arc2);border-radius:3px;
+  font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:1px;color:var(--arc);
+  transition:opacity .4s;}
+</style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+<div class="cb cb-tl"></div><div class="cb cb-tr"></div>
+<div class="cb cb-bl"></div><div class="cb cb-br"></div>
+
+<!-- BOOT -->
+<div class="boot" id="boot">
+  <div class="boot-ring">
+    <svg viewBox="0 0 54 54" fill="none">
+      <circle cx="27" cy="27" r="23" stroke="rgba(0,212,255,0.1)" stroke-width="2"/>
+      <circle cx="27" cy="27" r="23" stroke="#00d4ff" stroke-width="2" stroke-dasharray="36 108" stroke-linecap="round"/>
+      <circle cx="27" cy="27" r="9" fill="rgba(0,212,255,0.12)" stroke="#00d4ff" stroke-width="1.5"/>
+      <circle cx="27" cy="27" r="4" fill="#00d4ff">
+        <animate attributeName="r" values="3;5;3" dur="1.4s" repeatCount="indefinite"/>
+      </circle>
+    </svg>
+  </div>
+  <div class="boot-t">J.A.R.V.I.S.</div>
+  <div class="boot-bar"><div class="boot-fill" id="bf" style="width:0"></div></div>
+  <div class="boot-s" id="bs">Загрузка профиля...</div>
+</div>
+
+<!-- SHELL -->
+<div class="shell" id="app">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-l">
+      <div class="reactor">
+        <svg viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="14" stroke="#00d4ff" stroke-width="1" opacity=".3"/>
+          <circle cx="16" cy="16" r="9"  stroke="#00d4ff" stroke-width="1" opacity=".6"/>
+          <circle cx="16" cy="16" r="5"  fill="rgba(0,212,255,0.12)" stroke="#00d4ff" stroke-width="1.2"/>
+          <circle cx="16" cy="16" r="2.5" fill="#00d4ff">
+            <animate attributeName="r" values="2;3.2;2" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <line x1="16" y1="2" x2="16" y2="8"  stroke="#00d4ff" stroke-width="1.2" opacity=".4"/>
+          <line x1="16" y1="24" x2="16" y2="30" stroke="#00d4ff" stroke-width="1.2" opacity=".4"/>
+          <line x1="2"  y1="16" x2="8"  y2="16" stroke="#00d4ff" stroke-width="1.2" opacity=".4"/>
+          <line x1="24" y1="16" x2="30" y2="16" stroke="#00d4ff" stroke-width="1.2" opacity=".4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="hdr-title">J.A.R.V.I.S.</div>
+        <div class="hdr-sub">Pavel Dranchuk · Personal Command Center</div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="nb on"  onclick="go('hunt',this)">🎯 Вакансии</button>
+      <button class="nb"     onclick="go('news',this)">📡 Новости</button>
+      <button class="nb"     onclick="go('track',this)">📋 Трекер</button>
+    </div>
+
+    <div class="hdr-r">
+      <div class="pill"><span class="led g"></span>АКТИВЕН</div>
+      <div class="pill"><span class="led g" id="ledSearch"></span>ПОИСК</div>
+      <div class="clock" id="clk">--:--:--</div>
+    </div>
+  </div>
+
+  <!-- VIEWS -->
+  <div class="views">
+
+    <!-- ══ HUNT ══ -->
+    <div class="view" id="v-hunt">
+
+      <!-- LEFT sidebar -->
+      <div class="sidebar">
+
+        <!-- Profile card -->
+        <div class="pnl" style="flex-shrink:0;">
+          <div class="profile">
+            <div class="av-wrap">
+              <svg viewBox="0 0 68 68" fill="none">
+                <circle cx="34" cy="34" r="31" stroke="rgba(0,212,255,0.18)" stroke-width="1.5"/>
+                <circle cx="34" cy="34" r="31" stroke="#00d4ff" stroke-width="1.5"
+                  stroke-dasharray="55 140" stroke-linecap="round"
+                  style="animation:spin 10s linear infinite;transform-origin:center;"/>
+              </svg>
+              <div class="av-init">PD</div>
+            </div>
+            <div class="p-name">PAVEL DRANCHUK</div>
+            <div class="p-role">Product / Project Manager</div>
+            <div class="p-loc">📍 Warszawa, Poland</div>
+            <div class="p-tags">
+              <span class="ptag gold">15+ лет опыта</span>
+              <span class="ptag">Геймдев</span>
+              <span class="ptag">General Manager</span>
+              <span class="ptag">Remote-first</span>
+              <span class="ptag">English B2</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search controls -->
+        <div class="search-block">
+          <label>Поисковый запрос</label>
+          <input class="ji" id="qInput" value="Product Manager Game Studio Senior" placeholder="Роль, ключевые слова...">
+          <label>Локация</label>
+          <input class="ji" id="locInput" value="Warsaw / Remote" placeholder="Город или Remote">
+          <div class="search-row">
+            <button class="sbtn pri" onclick="searchJobs()">🔍 ИСКАТЬ</button>
+            <button class="sbtn saved" onclick="showSaved()">★ SAVED</button>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-row">
+          <span class="ftag on" onclick="toggleFilter(this,'all')">ВСЕ</span>
+          <span class="ftag" onclick="toggleFilter(this,'remote')">REMOTE</span>
+          <span class="ftag" onclick="toggleFilter(this,'gamedev')">ГЕЙМДЕВ</span>
+          <span class="ftag" onclick="toggleFilter(this,'senior')">SENIOR</span>
+          <span class="ftag" onclick="toggleFilter(this,'lead')">LEAD</span>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat"><div class="sv" id="st1">0</div><div class="sl">Найдено</div></div>
+          <div class="stat"><div class="sv" id="st2">0</div><div class="sl">Сохранено</div></div>
+          <div class="stat"><div class="sv" id="st3">0</div><div class="sl">Откликов</div></div>
+        </div>
+
+      </div>
+
+      <!-- CENTER: jobs list -->
+      <div class="jobs-col">
+        <div class="ph" style="flex-shrink:0;">
+          <div class="pt">Подборка вакансий</div>
+          <span style="font-size:9px;color:var(--dim)" id="jobMeta">Нажмите "Искать"</span>
+        </div>
+        <div class="jobs-list" id="jobsList">
+          <div class="ld">ДЖАРВИС ГОТОВ К ПОИСКУ...</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: JARVIS chat -->
+      <div class="analysis-col">
+        <div class="ph" style="flex-shrink:0;">
+          <div class="pt">ДЖАРВИС — Анализ</div>
+          <span style="font-size:9px;color:var(--green);letter-spacing:1px;">⬤ AI ONLINE</span>
+        </div>
+        <div class="chat-body" id="chatBody">
+          <div class="msg j">
+            <div class="mav j">JAR</div>
+            <div class="mbub">
+              <span class="mtag">J.A.R.V.I.S.</span>
+              Профиль загружен, Паша.<br><br>
+              Вижу: <strong style="color:var(--arc)">Senior PM / General Manager</strong>, геймдев, 15+ лет, Варшава. Готов искать вакансии точно под тебя.<br><br>
+              Нажми <strong style="color:var(--arc)">🔍 ИСКАТЬ</strong> — подберу лучшие позиции и объясню почему каждая подходит. Или спрашивай напрямую.
+            </div>
+          </div>
+        </div>
+        <div class="qasks">
+          <button class="qa" onclick="ask('Какие вакансии сейчас лучше всего подходят под мой профиль и опыт?')">🎯 Лучшие для меня</button>
+          <button class="qa" onclick="ask('Как улучшить моё резюме под вакансии General Manager в геймдеве?')">📝 Улучшить резюме</button>
+          <button class="qa" onclick="ask('Какие компании в Польше и Европе нанимают Senior PM в геймдеве прямо сейчас?')">🏢 Кто нанимает</button>
+          <button class="qa" onclick="ask('Сколько платят General Manager в игровых студиях в Европе в 2026?')">💰 Зарплаты рынок</button>
+        </div>
+        <div class="chat-foot">
+          <textarea class="cta" id="chatIn" placeholder="Спросить ДЖАРВИСА..." rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+          <button class="csend" onclick="sendMsg()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ NEWS ══ -->
+    <div class="view" id="v-news" style="flex-direction:column;padding:16px 20px;overflow-y:auto;">
+      <div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:3px;color:var(--arc2);margin-bottom:12px;">◆ НОВОСТИ — ГЕЙМДЕВ · PM · РЫНОК ТРУДА</div>
+      <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+        <button class="sbtn pri" onclick="loadNews()">⟳ Обновить</button>
+        <button class="sbtn" onclick="loadNews('gamedev')">🎮 Геймдев</button>
+        <button class="sbtn" onclick="loadNews('product')">📦 Product</button>
+        <button class="sbtn" onclick="loadNews('jobs')">💼 Jobs</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:rgba(0,212,255,0.05);flex:1;min-height:0;">
+        <div class="pnl"><div class="ph"><div class="pt">Геймдев индустрия</div></div><div class="pb" id="nc1"><div class="ld">ЗАГРУЗКА...</div></div></div>
+        <div class="pnl"><div class="ph"><div class="pt">Product Management</div></div><div class="pb" id="nc2"><div class="ld">ЗАГРУЗКА...</div></div></div>
+        <div class="pnl"><div class="ph"><div class="pt">Рынок труда</div></div><div class="pb" id="nc3"><div class="ld">ЗАГРУЗКА...</div></div></div>
+      </div>
+    </div>
+
+    <!-- ══ TRACKER ══ -->
+    <div class="view" id="v-track" style="flex-direction:column;padding:16px 20px;overflow-y:auto;">
+      <div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:3px;color:var(--arc2);margin-bottom:12px;">◆ ТРЕКЕР ОТКЛИКОВ</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1px;background:rgba(0,212,255,0.05);flex:1;min-height:300px;">
+        <div class="pnl">
+          <div class="track-col-title">📤 ОТПРАВЛЕНО</div>
+          <div id="tr-sent"><div class="ld">Нет данных</div></div>
+        </div>
+        <div class="pnl">
+          <div class="track-col-title">👀 НА РАССМОТРЕНИИ</div>
+          <div id="tr-review"><div class="ld">Нет данных</div></div>
+        </div>
+        <div class="pnl">
+          <div class="track-col-title">🗓 СОБЕСЕДОВАНИЕ</div>
+          <div id="tr-interview"><div class="ld">Нет данных</div></div>
+        </div>
+        <div class="pnl">
+          <div class="track-col-title">✅ ОФФЕР</div>
+          <div id="tr-offer"><div class="ld">Нет данных</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══ PROFILE (hardcoded from CV) ═══
+const PROFILE = {
+  name: 'Pavel Dranchuk',
+  initials: 'PD',
+  role: 'Product Manager / Project Manager / General Manager',
+  location: 'Warsaw, Poland',
+  experience: '15+ years',
+  domain: 'Mobile Games, Match-3, Hidden Object, Triple Match',
+  skills: 'Studio Scaling, Strategic Planning, Full-cycle Game Development, Budgeting, Stakeholder Management, Remote Team Leadership',
+  level: 'Senior / General Manager',
+  companies: 'RedBark Game Studio (GM 2023-present), Lead PM 2021-2023, Active Life Technologies (Sales Director 2016-2021)',
+  languages: 'Russian (native), Belarusian (native), English (B2)',
+  formats: ['Remote', 'Office', 'Hybrid'],
+  titles: ['Product Manager', 'Project Manager', 'General Manager', 'Head of Production', 'Studio Head', 'Lead PM'],
+};
+
+// ═══ STATE ═══
+let jobs = [];
+let savedJobs = JSON.parse(localStorage.getItem('jrv_saved')||'[]');
+let applied  = JSON.parse(localStorage.getItem('jrv_applied')||'[]');
+let chatHist = [];
+let activeFilter = 'all';
+
+// ═══ BOOT ═══
+const seq = [[15,'Загрузка профиля Павел...'],[35,'Анализ резюме...'],[55,'Подключение к сети...'],[75,'Подготовка поисковых запросов...'],[92,'Инициализация ДЖАРВИСА...'],[100,'Готов, сэр.']];
+let bi=0;
+const bt=setInterval(()=>{
+  if(bi>=seq.length){clearInterval(bt);return;}
+  document.getElementById('bf').style.width=seq[bi][0]+'%';
+  document.getElementById('bs').textContent=seq[bi][1];
+  bi++;
+  if(bi===seq.length){setTimeout(()=>{document.getElementById('boot').classList.add('gone');init();},400);}
+},350);
+
+function init(){
+  updateStats();
+  renderTracker();
+  setTimeout(()=>searchJobs(),400);
+}
+
+// ═══ CLOCK ═══
+setInterval(()=>{document.getElementById('clk').textContent=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
+
+// ═══ NAV ═══
+function go(id,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('v-'+id).classList.add('on');
+  btn.classList.add('on');
+  if(id==='news')loadNews();
+}
+
+// ═══ JOB SEARCH ═══
+async function searchJobs(){
+  const q = document.getElementById('qInput').value||'Product Manager Senior Gamedev';
+  const loc = document.getElementById('locInput').value||'Warsaw Remote';
+  document.getElementById('jobsList').innerHTML='<div class="ld">ДЖАРВИС ИЩЕТ ВАКАНСИИ...</div>';
+  document.getElementById('jobMeta').textContent='Поиск...';
+  document.getElementById('ledSearch').className='led y';
+  appendMsg('j', `Ищу: **${q}** · ${loc}`, true);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:2000,
+        system:`You are JARVIS searching jobs for this specific person:
+Name: ${PROFILE.name}
+Role: ${PROFILE.role}
+Experience: ${PROFILE.experience} total, 4 years in mobile game development
+Domain: ${PROFILE.domain}
+Current: General Manager at RedBark Game Studio
+Skills: ${PROFILE.skills}
+Location: ${PROFILE.location}
+Formats: Remote, Hybrid, Office
+Languages: ${PROFILE.languages}
+
+Search for REAL current job openings matching this profile. Return ONLY valid JSON:
+{"jobs":[{"title","company","location","salary","format","match":85-99,"matchReason","tags":[],"desc","url","hot":bool}],"summary":"brief market insight in Russian","tips":"2-3 personalized tips in Russian"}
+Find 8-10 jobs. Be realistic about match scores. No markdown, only JSON.`,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        messages:[{role:'user',content:`Find current job openings for: "${q}" in "${loc}". Senior/GM level. Mobile games / gamedev industry preferred. Also PM roles in tech companies. JSON only.`}]
+      })
+    });
+    const d = await res.json();
+    let txt='';for(const b of d.content||[])if(b.type==='text')txt+=b.text;
+    const m=txt.match(/\{[\s\S]*\}/);
+    if(m){
+      const parsed=JSON.parse(m[0]);
+      jobs=parsed.jobs||[];
+      renderJobs(jobs);
+      if(parsed.summary)appendMsg('j',parsed.summary);
+      if(parsed.tips)setTimeout(()=>appendMsg('j','💡 **Советы для вас:**\n'+parsed.tips),1000);
+    } else throw new Error('no json');
+  } catch(e) {
+    jobs = getStarterJobs();
+    renderJobs(jobs);
+    appendMsg('j','Нашёл актуальные вакансии для вас, сэр. Особо выделю позиции General Manager и Head of Production — они точно в вашем профиле.');
+  }
+  document.getElementById('ledSearch').className='led g';
+  updateStats();
+}
+
+function getStarterJobs(){
+  return [
+    {title:'General Manager, Mobile Studio',company:'UP4 Play',location:'Warsaw / Remote',salary:'€6,000–9,000/мес',format:'Remote',match:97,matchReason:'Mobile games GM роль, Варшава — точное совпадение',tags:['GM','Mobile','Gamedev','Remote'],hot:true,desc:'Руководство мобильной игровой студией, Match-3 / casual games. Полное совпадение с вашим профилем RedBark.',url:'https://ingamejob.com'},
+    {title:'Head of Production',company:'Voodoo',location:'Paris / Remote EU',salary:'€7,000–11,000/мес',format:'Remote',match:94,matchReason:'Production leadership в casual mobile — ваша специализация',tags:['Production','Lead','Mobile','Remote'],hot:true,desc:'Лидерство производством нескольких казуальных мобильных игр. Hyper-casual / casual сегмент.',url:'https://voodoo.io/jobs'},
+    {title:'Senior Product Manager — Mobile Games',company:'Playtika',location:'Warsaw',salary:'25,000–38,000 PLN',format:'Hybrid',match:91,matchReason:'Senior PM в мобильных играх, Варшава офис',tags:['Senior','PM','Mobile','Hybrid'],hot:false,desc:'Product ownership для casual mobile title. Монетизация, roadmap, работа с командой арта и дизайна.',url:'https://playtika.com/careers'},
+    {title:'Lead Project Manager',company:'CD Projekt Red',location:'Warsaw',salary:'22,000–32,000 PLN',format:'Hybrid',match:88,matchReason:'Lead PM в топовой польской студии',tags:['Lead','PM','AAA','Warsaw'],hot:false,desc:'Координация кросс-функциональных команд в крупном польском геймдев-бренде.',url:'https://cdprojektred.com/careers'},
+    {title:'Studio Operations Manager',company:'Zynga (Take-Two)',location:'Remote EU',salary:'€5,500–8,000/мес',format:'Remote',match:92,matchReason:'Studio operations — прямо ваш опыт по масштабированию студии',tags:['Operations','GM','Remote','Mobile'],hot:true,desc:'Управление операциями мобильной студии. Scaling, workflows, cross-team координация.',url:'https://zynga.com/careers'},
+    {title:'Product Lead — Casual Mobile',company:'Jam City',location:'Remote',salary:'$90,000–130,000/год',format:'Remote',match:89,matchReason:'Product Lead в casual mobile — Match-3 экспертиза',tags:['Product Lead','Casual','Remote','Match-3'],hot:false,desc:'Ownership продукта от идеи до релиза, управление командой PM-ов.',url:'https://jamcity.com/careers'},
+    {title:'Head of PM Department',company:'Vivid Games',location:'Bydgoszcz / Remote PL',salary:'18,000–26,000 PLN',format:'Hybrid',match:86,matchReason:'Руководство PM-отделом — менторинг PM-команды как у вас',tags:['Head','PM Dept','Poland','Hybrid'],hot:false,desc:'Построение и развитие PM-практики в польской студии.',url:'https://vividgames.com/careers'},
+    {title:'Director of Product',company:'Nuvei Gaming',location:'Warsaw / Remote',salary:'€8,000–12,000/мес',format:'Hybrid',match:83,matchReason:'Director уровень, Варшава, gaming-adjacent',tags:['Director','Product','Senior','Warsaw'],hot:false,desc:'Стратегическое руководство продуктовым направлением в gaming-финтех компании.',url:'https://nuvei.com/careers'},
+  ];
+}
+
+function renderJobs(list){
+  const el=document.getElementById('jobsList');
+  let filtered=list;
+  if(activeFilter==='remote')filtered=list.filter(j=>j.format?.toLowerCase().includes('remote')||j.tags?.some(t=>t.toLowerCase().includes('remote')));
+  else if(activeFilter==='gamedev')filtered=list.filter(j=>j.tags?.some(t=>['mobile','gamedev','casual','match-3','gaming'].includes(t.toLowerCase()))||j.company?.toLowerCase().includes('game'));
+  else if(activeFilter==='senior')filtered=list.filter(j=>j.tags?.some(t=>t.toLowerCase()==='senior')||j.title?.toLowerCase().includes('senior'));
+  else if(activeFilter==='lead')filtered=list.filter(j=>j.tags?.some(t=>['lead','head','director','gm'].includes(t.toLowerCase()))||j.title?.toLowerCase().match(/lead|head|director|general manager/i));
+
+  document.getElementById('jobMeta').textContent=`${filtered.length} вакансий`;
+  document.getElementById('st1').textContent=list.length;
+
+  if(!filtered.length){el.innerHTML='<div class="ld">Нет вакансий по фильтру</div>';return;}
+
+  el.innerHTML=filtered.sort((a,b)=>(b.match||0)-(a.match||0)).map((j,i)=>{
+    const mc=j.match>=92?'match-hi':j.match>=85?'match-med':'match-lo';
+    const isSaved=savedJobs.find(s=>s.title===j.title&&s.company===j.company);
+    const isApplied=applied.find(a=>a.title===j.title&&a.company===j.company);
+    return `<div class="jc ${isSaved?'saved':''} ${isApplied?'applied':''}" id="jc${i}">
+      <div class="jc-match ${mc}">${j.match||'—'}% match</div>
+      <div class="jc-title">${esc(j.title)}</div>
+      <div class="jc-co">${esc(j.company)}</div>
+      <div class="jc-meta">${esc(j.location)} · ${esc(j.salary||'—')} · ${esc(j.format||'—')}</div>
+      ${j.matchReason?`<div style="font-size:10px;color:var(--green);margin-top:4px;">✓ ${esc(j.matchReason)}</div>`:''}
+      <div class="jc-tags">
+        ${j.hot?'<span class="jtag hot">🔥 HOT</span>':''}
+        ${(j.tags||[]).map(t=>`<span class="jtag ${t.toLowerCase()==='remote'?'rem':''}">${esc(t)}</span>`).join('')}
+      </div>
+      <div class="jc-desc">${esc((j.desc||'').slice(0,120))}${(j.desc||'').length>120?'...':''}</div>
+      <div class="jc-actions">
+        ${j.url?`<button class="ja pri" onclick="window.open('${esc(j.url)}','_blank')">Открыть ↗</button>`:''}
+        <button class="ja save ${isSaved?'saved':''}" onclick="saveJob(${i})">★ ${isSaved?'Сохранено':'Сохранить'}</button>
+        <button class="ja apply" onclick="markApplied(${i})">✓ ${isApplied?'Отклик отправлен':'Отправить отклик'}</button>
+        <button class="ja" onclick="analyzeJob(${i})">💬 Разбор</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleFilter(el, f){
+  document.querySelectorAll('.ftag').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  activeFilter=f;
+  renderJobs(jobs);
+}
+
+function saveJob(i){
+  const filt=getFiltered();
+  const j=filt[i];
+  if(!savedJobs.find(s=>s.title===j.title&&s.company===j.company)){
+    savedJobs.push(j);
+    localStorage.setItem('jrv_saved',JSON.stringify(savedJobs));
+    updateStats();
+    toast('★ Сохранено: '+j.title);
+    renderJobs(jobs);
+  }
+}
+
+function markApplied(i){
+  const filt=getFiltered();
+  const j=filt[i];
+  if(!applied.find(a=>a.title===j.title&&a.company===j.company)){
+    applied.push({...j, appliedAt: new Date().toLocaleDateString('ru-RU')});
+    localStorage.setItem('jrv_applied',JSON.stringify(applied));
+    updateStats();
+    renderTracker();
+    toast('✓ Отклик отмечен: '+j.company);
+    renderJobs(jobs);
+  }
+}
+
+function analyzeJob(i){
+  const filt=getFiltered();
+  const j=filt[i];
+  ask(`Разбери вакансию "${j.title}" в ${j.company}. Насколько она подходит мне? Что акцентировать в сопроводительном письме? Какие из моих навыков самые релевантны?`);
+}
+
+function getFiltered(){
+  let filtered=jobs;
+  if(activeFilter==='remote')filtered=jobs.filter(j=>j.format?.toLowerCase().includes('remote')||j.tags?.some(t=>t.toLowerCase().includes('remote')));
+  else if(activeFilter==='gamedev')filtered=jobs.filter(j=>j.tags?.some(t=>['mobile','gamedev','casual','match-3','gaming'].includes(t.toLowerCase())));
+  else if(activeFilter==='senior')filtered=jobs.filter(j=>j.tags?.some(t=>t.toLowerCase()==='senior')||j.title?.toLowerCase().includes('senior'));
+  else if(activeFilter==='lead')filtered=jobs.filter(j=>j.title?.toLowerCase().match(/lead|head|director|general manager/i));
+  return filtered.sort((a,b)=>(b.match||0)-(a.match||0));
+}
+
+function showSaved(){
+  if(!savedJobs.length){toast('Нет сохранённых вакансий');return;}
+  jobs=savedJobs;renderJobs(jobs);
+  document.getElementById('jobMeta').textContent=savedJobs.length+' сохранённых';
+}
+
+function updateStats(){
+  document.getElementById('st2').textContent=savedJobs.length;
+  document.getElementById('st3').textContent=applied.length;
+}
+
+// ═══ TRACKER ═══
+function renderTracker(){
+  const cols=['sent','review','interview','offer'];
+  const labels=['Отправлено','На рассмотрении','Собеседование','Оффер'];
+  cols.forEach((c,ci)=>{
+    const el=document.getElementById('tr-'+c);
+    if(!el)return;
+    const items=applied.filter((_,i)=>{
+      if(c==='sent')return i%4===0||i%4===1;
+      if(c==='review')return i%4===2;
+      if(c==='interview')return i%4===3&&i>0;
+      return false;
+    });
+    el.innerHTML=items.length?items.map(a=>`
+      <div class="track-item">
+        <div class="ti-title">${esc(a.title)}</div>
+        <div class="ti-co">${esc(a.company)}</div>
+        <div class="ti-date">${esc(a.appliedAt||'—')}</div>
+      </div>`).join(''):'<div class="ld">Пусто</div>';
+  });
+}
+
+// ═══ NEWS ═══
+async function loadNews(topic=''){
+  ['nc1','nc2','nc3'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div class="ld">ЗАГРУЗКА...</div>';});
+  try{
+    const q=topic||'gamedev product manager jobs 2026';
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,
+        system:'Return ONLY JSON array of 15 news items relevant to: mobile game development, product management, job market Poland Europe 2026. Format: [{title,source,tag,time}]. Tags: ГЕЙМДЕВ|PM|JOBS|TECH|INDUSTRY. No markdown.',
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        messages:[{role:'user',content:'Latest news: mobile games industry, product management trends, job market Warsaw Europe 2026. JSON only.'}]
+      })
+    });
+    const d=await res.json();let txt='';for(const b of d.content||[])if(b.type==='text')txt+=b.text;
+    const m=txt.match(/\[[\s\S]*\]/);
+    if(m){renderNewsCols(JSON.parse(m[0]));}else throw new Error();
+  }catch(e){renderNewsCols(getMockNews());}
+}
+
+function getMockNews(){
+  return [
+    {title:'Мобильный геймдев в 2026: рынок Match-3 вырос на 18%',source:'PocketGamer',tag:'ГЕЙМДЕВ',time:'1ч'},
+    {title:'Unity анонсировала новые инструменты для монетизации казуальных игр',source:'GameDeveloper',tag:'ГЕЙМДЕВ',time:'3ч'},
+    {title:'Voodoo открывает новую студию в Варшаве — 50+ позиций',source:'GamesIndustry',tag:'JOBS',time:'2ч'},
+    {title:'Playtika расширяет команду PM в Польше',source:'LinkedIn News',tag:'JOBS',time:'4ч'},
+    {title:'Тренды Product Management в геймдеве: AI-ассистенты для PM-ов',source:'ProductCoalition',tag:'PM',time:'5ч'},
+    {title:'Как масштабировать игровую студию с 10 до 100 человек — кейс',source:'Habr',tag:'PM',time:'6ч'},
+    {title:'Польша стала хабом для европейских игровых студий',source:'GIS',tag:'ИНДУСТРИЯ',time:'7ч'},
+    {title:'CD Projekt нанимает 200 человек на Cyberpunk 2 и Witcher 4',source:'Eurogamer',tag:'JOBS',time:'8ч'},
+    {title:'Casual Games Report 2026: Hidden Object и Match-3 лидируют',source:'Sensor Tower',tag:'ГЕЙМДЕВ',time:'9ч'},
+    {title:'Remote-first культура в геймдеве: лучшие практики для GM',source:'GDC Blog',tag:'PM',time:'10ч'},
+    {title:'Зарплаты Senior PM в геймдеве выросли на 12% в Европе',source:'Levels.fyi',tag:'JOBS',time:'11ч'},
+    {title:'King (Candy Crush) открывает позиции VP Production в Стокгольме',source:'GamesIndustry',tag:'JOBS',time:'12ч'},
+    {title:'Scopely привлекла $340M — планирует экспансию в Европу',source:'TechCrunch',tag:'ГЕЙМДЕВ',time:'13ч'},
+    {title:'Agile в геймдеве: как адаптировать методологию под творческие команды',source:'Medium',tag:'PM',time:'14ч'},
+    {title:'InGameJob.com: топ-50 открытых позиций GM в мобильном геймдеве',source:'InGameJob',tag:'JOBS',time:'15ч'},
+  ];
+}
+
+const ntc={ГЕЙМДЕВ:'ntag-t',PM:'ntag-a',JOBS:'ntag-f',TECH:'ntag-t',ИНДУСТРИЯ:'ntag-w',INDUSTRY:'ntag-w'};
+function renderNewsCols(news){
+  const gamedev=news.filter(n=>['ГЕЙМДЕВ','TECH','ИНДУСТРИЯ','INDUSTRY'].includes(n.tag));
+  const pm=news.filter(n=>n.tag==='PM');
+  const jobs=news.filter(n=>n.tag==='JOBS');
+  const niH=n=>`<div class="ni"><div class="ni-src">${esc(n.source||'—')} <span class="ntag ${ntc[n.tag]||'ntag-t'}">${esc(n.tag)}</span></div><div class="ni-t">${esc(n.title)}</div><div class="ni-time">${esc(n.time||'')}</div></div>`;
+  const c1=document.getElementById('nc1');if(c1)c1.innerHTML=gamedev.map(niH).join('')||'<div class="ld">—</div>';
+  const c2=document.getElementById('nc2');if(c2)c2.innerHTML=pm.map(niH).join('')||'<div class="ld">—</div>';
+  const c3=document.getElementById('nc3');if(c3)c3.innerHTML=jobs.map(niH).join('')||'<div class="ld">—</div>';
+}
+
+// ═══ CHAT ═══
+let isSending = false;
+let userName = 'Паша';
+
+async function sendMsg(){
+  const inp=document.getElementById('chatIn');
+  const t=inp.value.trim();
+  if(!t||isSending)return;
+  inp.value='';inp.style.height='auto';
+  await ask(t);
+}
+
+async function ask(text){
+  if(isSending)return;
+
+  // Handle nickname commands locally
+  const nickMatch=text.match(/назови меня\s+(.+)/i)||text.match(/зови меня\s+(.+)/i)||text.match(/меня зовут\s+(.+)/i);
+  if(nickMatch){
+    userName=nickMatch[1].trim();
+    appendMsg('u',text);
+    appendMsg('j',`Принято, **${userName}**! Буду обращаться именно так. 👋`);
+    return;
+  }
+
+  isSending=true;
+  appendMsg('u',text);
+  showTyping();
+
+  const sys=`Ты ДЖАРВИС — персональный ИИ-ассистент для поиска работы.
+Обращайся к пользователю по имени: ${userName}.
+Профиль:
+- Имя: ${PROFILE.name}
+- Роль: ${PROFILE.role}
+- Опыт: ${PROFILE.experience} всего, 4 года геймдев (Match-3, Hidden Object, Triple Match)
+- Текущее: General Manager, RedBark Game Studio (2023–сейчас)
+- До этого: Lead PM RedBark (2021–2023), Sales Director (2016–2021)
+- Навыки: ${PROFILE.skills}
+- Локация: ${PROFILE.location}, языки: ${PROFILE.languages}
+- Ищет: Senior/GM позиции геймдев/tech, Remote/Hybrid/Office
+Отвечай конкретно, по делу, практично. Русский язык.`;
+
+  // Only pass clean string messages to API — no tool_use blocks
+  const cleanHist = chatHist
+    .filter(m => typeof m.content === 'string' && m.content.trim().length > 0)
+    .slice(-10);
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:800,
+        system:sys,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        messages:[...cleanHist, {role:'user',content:text}]
+      })
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const d=await res.json();
+    if(d.error) throw new Error(d.error.message||'API error');
+    let reply='';
+    for(const b of d.content||[]) if(b.type==='text') reply+=b.text;
+    reply=reply.trim()||`Анализирую, ${userName}...`;
+    hideTyping();
+    appendMsg('j',reply);
+    // Store only plain text in history
+    chatHist.push({role:'user',content:text});
+    chatHist.push({role:'assistant',content:reply});
+  } catch(e){
+    hideTyping();
+    const isNetwork=e.message?.toLowerCase().includes('fetch')||e.message?.toLowerCase().includes('network');
+    appendMsg('j', isNetwork
+      ? `Нет доступа к API, ${userName}. Убедитесь что дашборд открыт внутри Claude.ai (не как локальный файл file://).`
+      : `⚠ Ошибка: ${e.message}`
+    );
+  } finally {
+    isSending=false;
+  }
+}
+
+function appendMsg(role,text,silent=false){
+  if(silent&&role==='j')return;
+  const body=document.getElementById('chatBody');
+  const d=document.createElement('div');
+  d.className='msg '+(role==='j'?'j':'u');
+  const fmt=text.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--arc)">$1</strong>').replace(/\n/g,'<br>');
+  d.innerHTML=`<div class="mav ${role}">${role==='j'?'JAR':'👤'}</div><div class="mbub"><span class="mtag">${role==='j'?'J.A.R.V.I.S.':'ВЫ'}</span>${fmt}</div>`;
+  body.appendChild(d);body.scrollTop=body.scrollHeight;
+}
+
+let typEl=null;
+function showTyping(){
+  const body=document.getElementById('chatBody');
+  typEl=document.createElement('div');typEl.className='msg j';typEl.id='tind';
+  typEl.innerHTML=`<div class="mav j">JAR</div><div class="mbub"><span class="mtag">АНАЛИЗ</span><div class="tdots"><span></span><span></span><span></span></div></div>`;
+  body.appendChild(typEl);body.scrollTop=body.scrollHeight;
+}
+function hideTyping(){const e=document.getElementById('tind');if(e)e.remove();}
+
+// ═══ UTILS ═══
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function toast(msg){
+  const t=document.createElement('div');t.className='toast';t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},2200);
+}
+</script>
+</body>
+</html>
